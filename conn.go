@@ -16,6 +16,10 @@ func GetConn(name string, isread bool, modnum int) *QueryDb {
 	}
 	//是否分实例
 	name = GetBranchName(name, modnum, config.Autobranch)
+	config, isok = configs[name]
+	if !isok {
+		dblog.Fatal("DB配置:" + name + "找不到！")
+	}
 	//是否读从
 	readlen := len(config.Reads)
 	keyname := name
