@@ -13,12 +13,11 @@ type Config struct {
 	Host       string   //host localhost
 	Port       string   //端口 3306
 	Charset    string   //字符编码 utf8mb4
-	Collation  string   //字符编码 utf8mb4_unicode_ci
 	Database   string   //默认连接数据库
-	Autobranch string   //是否分库 0
+	Autobranch string   //是否分库 分库数量 默认为0
 	Reads      []Config //是否有从库 []
-	Maxopen    int
-	Maxnum     int
+	Maxopen    int      //打开连接数 默认0
+	Maxnum     int      //最大连接数 默认2
 }
 
 //设置DB配置
@@ -34,7 +33,7 @@ func (config Config) Dns() string {
 		config.Database + "?charset=" +
 		config.Charset + "&loc=" + time.Local.String()
 }
-func (config Config) CopyConfig(c Config) {
+func (config *Config) CopyConfig(c Config) {
 	if c.Username != "" {
 		config.Username = c.Username
 	}
