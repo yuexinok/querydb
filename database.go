@@ -90,7 +90,7 @@ func (querydb *QueryDb) Exec(query string, args ...interface{}) (Result, error) 
 	start := time.Now()
 	defer func() {
 		querydb.lastsql.CostTime = time.Since(start)
-		WriteExecLog(false, querydb.lastsql)
+		WriteExecLog(querydb.lastsql)
 	}()
 	return querydb.db.Exec(query, args...)
 }
@@ -102,7 +102,7 @@ func (querydb *QueryDb) Query(query string, args ...interface{}) (*Rows, error) 
 	start := time.Now()
 	defer func() {
 		querydb.lastsql.CostTime = time.Since(start)
-		WriteExecLog(false, querydb.lastsql)
+		WriteExecLog(querydb.lastsql)
 
 	}()
 	return querydb.db.Query(query, args...)
@@ -141,7 +141,7 @@ func (querytx *QueryTx) Exec(query string, args ...interface{}) (Result, error) 
 	start := time.Now()
 	defer func() {
 		querytx.lastsql.CostTime = time.Since(start)
-		WriteExecLog(false, querytx.lastsql)
+		WriteExecLog(querytx.lastsql)
 
 	}()
 	return querytx.Exec(query, args...)
@@ -152,7 +152,7 @@ func (querytx *QueryTx) Query(query string, args ...interface{}) (*Rows, error) 
 	start := time.Now()
 	defer func() {
 		querytx.lastsql.CostTime = time.Since(start)
-		WriteExecLog(false, querytx.lastsql)
+		WriteExecLog(querytx.lastsql)
 
 	}()
 	return querytx.Query(query, args...)
@@ -169,4 +169,9 @@ func (sql Sql) ToString() string {
 		s = strings.Replace(s, "?", val, 1)
 	}
 	return s
+}
+func (sql Sql) ToJson() string {
+	return fmt.Sprintf(`
+{"sql":%s,"costtime":"%s"}
+`, strconv.Quote(sql.ToString()), sql.CostTime)
 }

@@ -10,5 +10,5 @@ func NewDBError(msg string, sql Sql) DbError {
 }
 
 func (e DbError) Error() string {
-	return "DBError:{\"msg:\":\"" + e.msg + "\",\"sql\":\"" + e.sql.Sql + "\",\"costtime:\"\"" + string(e.sql.CostTime)
+	return "DBError:" + e.msg + " " + e.sql.ToJson()
 }

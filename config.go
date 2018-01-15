@@ -5,7 +5,6 @@ import (
 )
 
 var configs map[string]Config
-var exctlog bool
 
 type Config struct {
 	Username   string   //账号 root
@@ -45,13 +44,5 @@ func (config *Config) CopyConfig(c Config) {
 	}
 	if c.Port != "" {
 		config.Port = c.Port
-	}
-}
-func SetExecLog(b bool) {
-	exctlog = b
-}
-func WriteExecLog(b bool, sql Sql) {
-	if b || exctlog {
-		dblog.Println(sql.ToString())
 	}
 }

@@ -59,6 +59,39 @@ type Config struct {
 
 ### 连接：
 
+获取连接：
+
+```go
+//获取一个连接实例 name实例名称，isread是否只读，modnum如果分库的话填写分库因子 默认为0
+func GetConn(name string, isread bool, modnum int) *QueryDb
+```
+
+```go
+//获取读实例
+dbread := querydb.GetConn("base", true, 2018)
+//获取读写实例
+dbwrite := querydb.GetConn("base", false, 2018)
+//标准获取
+crm := querydb.GetConn("crm", false, 0)
+```
+
+返回的queryDb实现了接口：
+
+```go
+type Connection interface {
+	Exec(query string, args ...interface{}) (Result, error)
+	Query(query string, args ...interface{}) (*Rows, error)
+	NewQuery() *QueryBuilder
+	GetLastSql() Sql
+}
+```
+
+实例QueryDb有Begin()方法，返回一个QueryTx实例，QueryTx实例也实现了Connection接口
+
+```go
+func (querydb *QueryDb) Begin() (*QueryTx, error)
+```
+
 
 
 ### 查询：
@@ -79,6 +112,41 @@ type Config struct {
 
 ### 事务：
 
-### 
+
+
+
+
+### 调试：
+
+直接调用db实例：的GetLastSql
+
+```go
+type Sql struct {
+	Sql      string
+	Args     []interface{}
+	CostTime time.Duration
+}
+func (querydb *QueryDb) GetLastSql() Sql
+```
+
+```go
+fmt.Println(db.GetLastSql())//{INSERT INTO d_ec_crm.t_crm_change  (f_crm_id) VALUES (?) [1236] 3.511848ms}
+
+//或者直接输出完整sql
+fmt.Println(db.GetLastSql().ToString())//INSERT INTO d_ec_crm.t_crm_change  (f_crm_id) VALUES ("1236")
+//json格式
+fmt.Println(db.GetLastSql().ToJson()) //{"sql":"SELECT f_crm_id FROM d_ec_crm.t_crm_change WHERE  f_crm_id = \"1236\" LIMIT 0,1","costtime":"1.050622ms"}
+
+
+```
+
+日志输出：
+
+```go
+//设置Logger
+querydb.SetLogger(log.New(os.Stdout, "", log.Ldate))
+//打印执行日志
+querydb.SetExecLog(true)
+```
 
 ### 注意事项：
