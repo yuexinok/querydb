@@ -358,7 +358,18 @@ func (query *QueryBuilder) InsertGetId(datas map[string]interface{}) (int64, err
 	}
 	return result.LastInsertId()
 }
-
+func (query *QueryBuilder) Replace(datas ...map[string]interface{}) (int64, error) {
+	query.setData(datas...)
+	grammar := Grammar{builder: query}
+	sql := grammar.Replace()
+	result, err := query.connection.Exec(sql, query.args...)
+	if err != nil {
+		err = NewDBError(err.Error(), query.connection.GetLastSql())
+		dblog.Println(err.Error())
+		return 0, err
+	}
+	return result.RowsAffected()
+}
 func (query *QueryBuilder) Update(datas map[string]interface{}) (int64, error) {
 	query.setData(datas)
 	grammar := Grammar{builder: query}

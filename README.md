@@ -30,29 +30,29 @@ type Config struct {
 配置范例：
 
 ```go
-	//设置Logger
-	querydb.SetLogger(log.New(os.Stdout, "", log.Ldate))
+//设置Logger
+querydb.SetLogger(log.New(os.Stdout, "", log.Ldate))
 
-	//配置集合
-	configs := map[string]querydb.Config{}
+//配置集合
+configs := map[string]querydb.Config{}
 
-	reads := make([]querydb.Config, 1)
+reads := make([]querydb.Config, 1)
 
-	reads[0] = querydb.Config{Username: "read", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4"}
+reads[0] = querydb.Config{Username: "read", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4"}
 
-	//标准
-	configs["crm"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4", Database: "d_ec_crmextend"}
+//标准
+configs["crm"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4", Database: "d_ec_crmextend"}
 
-	//分库
-	configs["base"] = querydb.Config{Autobranch: "2"}
-	configs["base0"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4",  Database: "d_ec_crm", Reads: reads}
-	configs["base1"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4",  Database: "d_ec_crm", Reads: reads}
+//分库
+configs["base"] = querydb.Config{Autobranch: "2"}
+configs["base0"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4",  Database: "d_ec_crm", Reads: reads}
+configs["base1"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4",  Database: "d_ec_crm", Reads: reads}
 
-	//读写分离
-	configs["user"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4", Database: "d_ec_user", Reads: reads}
+//读写分离
+configs["user"] = querydb.Config{Username: "root", Password: "123456", Host: "127.0.0.1", Port: "3306", Charset: "utf8mb4", Database: "d_ec_user", Reads: reads}
 
-	//初始化设置
-	querydb.SetConfig(configs)
+//初始化设置
+querydb.SetConfig(configs)
 ```
 
 
@@ -100,15 +100,86 @@ func (querydb *QueryDb) Begin() (*QueryTx, error)
 
 ### 插入：
 
+```go
+//返回受影响行数和错误
+func (query *QueryBuilder) Insert(datas ...map[string]interface{}) (int64, error)
+//返回对应的自增id
+func (query *QueryBuilder) InsertGetId(datas map[string]interface{}) (int64, error)
+```
+
+```go
+data := map[string]interface{}{"f_title": "标题"}
+//获取自增ID插入
+id, err := db.Table("d_ec_user.t_tags").InsertGetId(data)
+fmt.Println(id, err)
+
+//单条插入
+id, err = db.Table("d_ec_user.t_tags").Insert(data)
+fmt.Println(id, err)
+
+//批量插入
+num, err := db.Table("d_ec_user.t_tags").Insert(data, data)
+fmt.Println(num, err)
+```
+
 
 
 ### 更新：
+
+返回受影响行数，和错误
+
+```go
+func (query *QueryBuilder) Update(datas map[string]interface{}) (int64, error)
+
+//插入更新ON DUPLICATE KEY UPDATE
+//第一个参数为插入的数据，第一个参数为如果数据操作要更新的数据
+func (query *QueryBuilder) InsertUpdate(insert map[string]interface{}, update map[string]interface{}) (int64, error)
+
+//替换
+func (query *QueryBuilder) Replace(datas ...map[string]interface{}) (int64, error)
+```
+
+```go
+num1, err1 := db.Table("d_ec_user.t_tags").
+   Where("f_tag_id", "<=", 8).
+   Where("f_count", 0).
+   Limit(2).
+   OrderBy("f_tag_id", "desc").
+   Update(map[string]interface{}{"f_title": `更换的表体"双引号",'单引号'`})
+
+   //UPDATE d_ec_user.t_tags SET f_title = \"更换的表体\\\"双引号\\\",'单引号'\" WHERE  f_tag_id <= \"8\" AND f_count = \"0\" ORDER BY f_tag_id DESC LIMIT 2"
+fmt.Println(num1, err1)
+
+//insertupdate
+num2, err2 := db.Table("d_ec_user.t_tags").InsertUpdate(map[string]interface{}{"f_title": "插入的数据", "f_tag_id": 100}, map[string]interface{}{"f_count": querydb.NewEpr("f_count+2")})
+	fmt.Println(num2, err2)
+
+//replace
+num3, err3 := db.Table("d_ec_user.t_tags").Replace(map[string]interface{}{"f_title": `替换的数据`, "f_tag_id": 100})
+	fmt.Println(num3, err3)
+```
+
+针对更新提供`querydb.NewEpr`(data string) 用于原生支持db相关操作：
+
+```go
+querydb.NewEpr("f_count+2")
+```
 
 
 
 ### 删除：
 
-### 
+返回被删除的行数和错误
+
+```go
+func (query *QueryBuilder) Delete() (int64, error)
+```
+
+```Go
+deletenum, err := db.Table("d_ec_user.t_tags").In("f_tag_id", []interface{}{1, 2, 3}...).Delete()
+deletenum, err = db.Table("d_ec_user.t_tags").In("f_tag_id", 1, 2, 3).Delete()
+fmt.Println(deletenum, err)
+```
 
 ### 事务：
 
