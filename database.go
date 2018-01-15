@@ -171,7 +171,5 @@ func (sql Sql) ToString() string {
 	return s
 }
 func (sql Sql) ToJson() string {
-	return fmt.Sprintf(`
-{"sql":%s,"costtime":"%s"}
-`, strconv.Quote(sql.ToString()), sql.CostTime)
+	return fmt.Sprintf(`{"sql":%s,"costtime":"%s"}`, strconv.Quote(sql.ToString()), sql.CostTime)
 }
