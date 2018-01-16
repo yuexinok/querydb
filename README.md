@@ -242,6 +242,22 @@ func (query *QueryBuilder) Skip(offset int) *QueryBuilder
 func (query *QueryBuilder) Limit(limit int) *QueryBuilder
 ```
 
+```go
+rows, err = crm.Table("d_ec_crm.t_eccrm_detail").
+	Select("f_name", "f_crm_id", "f_user_id", "f_corp_id").
+	Distinct().
+	Where("f_corp_id", 21299).
+	Where("f_user_id", 0).
+	OrderBy("f_create_time", "desc").
+	OrderBy("f_crm_id", "asc").
+	GroupBy("f_user_id", "f_corp_id").
+	Offset(2).
+	Limit(10).
+	GetRows()
+fmt.Println(querydb.ToMap(rows))
+//SELECT  DISTINCT f_name,f_crm_id,f_user_id,f_corp_id FROM d_ec_crm.t_eccrm_detail WHERE  f_corp_id = "21299" AND f_user_id = "0" GROUP BY f_user_id,f_corp_id ORDER BY f_create_time DESC,f_crm_id ASC LIMIT 2,10 该语句在特定mysql模式下不合法
+```
+
 
 
 ##### Join，LeftJoin RightJoin:
@@ -270,6 +286,45 @@ err = crm.Table("d_ec_crm.t_eccrm_detail as d").
 ```go
 func (query *QueryBuilder) Union(unions ...QueryBuilder) *QueryBuilder 
 func (query *QueryBuilder) UnionAll(unions ...QueryBuilder) *QueryBuilder
+func (query *QueryBuilder) UnionOffset(offset int) *QueryBuilder
+func (query *QueryBuilder) UnionLimit(limit int) *QueryBuilder
+func (query *QueryBuilder) UnionOrderBy(column string, direction string) *QueryBuilder
+```
+
+```go
+union := crm.Table("d_ec_crm.t_eccrm_detail").
+	Select("f_name", "f_crm_id", "f_user_id", "f_corp_id").
+	Where("f_corp_id", 271959).
+	Where("f_user_id", 0).
+	OrderBy("f_create_time", "desc").
+	Offset(2).
+	Limit(10)
+
+rows, err = crm.Table("d_ec_crm.t_eccrm_detail").
+	Select("f_name", "f_crm_id", "f_user_id", "f_corp_id").
+	Where("f_corp_id", 21299).
+	Where("f_user_id", 0).
+	OrderBy("f_create_time", "asc").
+	Offset(2).
+	Limit(10).
+	Union(*union).
+	//UnionOffset(0).
+	//UnionLimit(10).
+	UnionOrderBy("f_crm_id", "desc").
+	GetRows()
+fmt.Println(querydb.ToMap(rows))
+
+//(SELECT f_name,f_crm_id,f_user_id,f_corp_id FROM d_ec_crm.t_eccrm_detail WHERE  f_corp_id = "21299" AND f_user_id = "0" ORDER BY f_create_time ASC LIMIT 2,10) UNION (SELECT f_name,f_crm_id,f_user_id,f_corp_id FROM d_ec_crm.t_eccrm_detail WHERE  f_corp_id = "271959" AND f_user_id = "0" ORDER BY f_create_time DESC LIMIT 2,10) ORDER BY f_crm_id DESC"
+```
+
+##### 原生支持：
+
+不建议这样用
+
+```go
+sql := "select count(*) as n,f_user_id from t_eccrm_detail where f_corp_id=? group by f_user_id"
+rows, err = db.Query(sql, 21299)
+fmt.Println(querydb.ToMap(rows))
 ```
 
 

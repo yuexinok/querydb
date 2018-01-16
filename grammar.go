@@ -61,7 +61,7 @@ func (g Grammar) compileLimit(isunion bool) string {
 
 func (g Grammar) compileDistinct() string {
 	if g.builder.distinct {
-		return " DISTINCT"
+		return " DISTINCT "
 	}
 	return ""
 }

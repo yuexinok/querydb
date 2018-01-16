@@ -227,9 +227,10 @@ func (query *QueryBuilder) UnionOrderBy(column string, direction string) *QueryB
 }
 func (query *QueryBuilder) UnionAll(unions ...QueryBuilder) *QueryBuilder {
 	for i, len := 0, len(unions); i < len; i++ {
-		query.unions[i] = union{query: unions[i], operator: UNIONALL}
+		query.unions = append(query.unions, union{query: unions[i], operator: UNIONALL})
 		query.addArg(unions[i].args...)
 	}
+	return query
 	return query
 }
 
