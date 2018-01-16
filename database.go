@@ -144,7 +144,7 @@ func (querytx *QueryTx) Exec(query string, args ...interface{}) (Result, error) 
 		WriteExecLog(querytx.lastsql)
 
 	}()
-	return querytx.Exec(query, args...)
+	return querytx.tx.Exec(query, args...)
 }
 func (querytx *QueryTx) Query(query string, args ...interface{}) (*Rows, error) {
 	querytx.lastsql.Sql = query
@@ -155,7 +155,7 @@ func (querytx *QueryTx) Query(query string, args ...interface{}) (*Rows, error) 
 		WriteExecLog(querytx.lastsql)
 
 	}()
-	return querytx.Query(query, args...)
+	return querytx.tx.Query(query, args...)
 }
 func (querytx *QueryTx) GetLastSql() Sql {
 	return querytx.lastsql

@@ -111,7 +111,7 @@ func ToMap(rows *Rows) []map[string]interface{}
 //TODO
 ```
 
-基本用法：
+#### 基本用法：
 
 ```go
 //多条查询
@@ -414,7 +414,22 @@ fmt.Println(deletenum, err)
 
 ### 事务：
 
+```go
+//获取一个tx实例
+tx, err := crm.Begin()
+if err != nil {
+	fmt.Println(err)
+}
+r, err := tx.Table("d_ec_crm.t_crm_change").
+	Insert(map[string]interface{}{"f_crm_id": 123})
 
+fmt.Println(r)
+//提交一个事务
+err = tx.Commit()
+if err != nil {
+	tx.Rollback()
+}
+```
 
 
 
@@ -452,3 +467,7 @@ querydb.SetExecLog(true)
 ```
 
 ### 注意事项：
+
+1，使用事务的时候，一定要保证用的的db是事务的那个db。
+
+2，暂且不支持其他数据库类型。
