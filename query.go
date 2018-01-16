@@ -62,6 +62,7 @@ type w struct {
 	do       string
 }
 
+//设置操作的表名称
 func (query *QueryBuilder) Table(tablename ...string) *QueryBuilder {
 	query.table = tablename
 	return query
@@ -154,6 +155,11 @@ func (query *QueryBuilder) OrIn(column string, value ...interface{}) *QueryBuild
 }
 func (query *QueryBuilder) NotIn(column string, value ...interface{}) *QueryBuilder {
 	query.toWhere(column, NOTIN, len(value), AND)
+	query.addArg(value...)
+	return query
+}
+func (query *QueryBuilder) OrNotIn(column string, value ...interface{}) *QueryBuilder {
+	query.toWhere(column, NOTIN, len(value), OR)
 	query.addArg(value...)
 	return query
 }

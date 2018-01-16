@@ -69,9 +69,9 @@ func (querydb *QueryDb) NewQuery() *QueryBuilder {
 }
 
 //查询构造器快速调用
-func (querydb *QueryDb) Table(tablename string) *QueryBuilder {
+func (querydb *QueryDb) Table(tablename ...string) *QueryBuilder {
 	query := &QueryBuilder{connection: querydb}
-	return query.Table(tablename)
+	return query.Table(tablename...)
 }
 
 //开启一个事务
@@ -131,9 +131,9 @@ func (querytx *QueryTx) Rollback() error {
 func (querytx *QueryTx) NewQuery() *QueryBuilder {
 	return &QueryBuilder{connection: querytx}
 }
-func (querytx *QueryTx) Table(tablename string) *QueryBuilder {
+func (querytx *QueryTx) Table(tablename ...string) *QueryBuilder {
 	query := &QueryBuilder{connection: querytx}
-	return query.Table(tablename)
+	return query.Table(tablename...)
 }
 func (querytx *QueryTx) Exec(query string, args ...interface{}) (Result, error) {
 	querytx.lastsql.Sql = query

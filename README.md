@@ -96,6 +96,182 @@ func (querydb *QueryDb) Begin() (*QueryTx, error)
 
 ### 查询：
 
+```go
+//多条查询  返回的Rows和sql.Rows用户一致
+func (query *QueryBuilder) GetRows() (*Rows, error)
+//单条查询 dest用法和sql.QueryRow()用法一致
+func (query *QueryBuilder) GetRow(dest ...interface{}) error
+//总数查询
+func (query *QueryBuilder) Count() (int64, error)
+
+//提供辅助函数 把rows转化成对应的map
+func ToMap(rows *Rows) []map[string]interface{}
+
+//提供辅助函数 把rows转化成对应的 struct 切片
+//TODO
+```
+
+基本用法：
+
+```go
+//多条查询
+rows, err := db.Table("d_ec_user.t_tags").Where("f_tag_id", 5).GetRows()
+if err == nil {
+   //生成map
+   list := querydb.ToMap(rows)
+   fmt.Println(list)
+}
+
+//单条查询
+var title string
+	err = db.Table("d_ec_user.t_tags").Select("f_title").Where("f_tag_id", "=", 5).GetRow(&title)
+	fmt.Println(err, title)
+```
+
+#### 复杂用法：
+
+##### 多表查询：
+
+```go
+//设置操作的表名称
+func (query *QueryBuilder) Table(tablename ...string) *QueryBuilder
+```
+
+```go
+
+//范例
+rows, err = crm.Table("d_ec_crm.t_eccrm_detail as d", "d_ec_crm.t_crm_relation as r").
+		Select("d.f_name", "r.f_user_id").
+		Where("d.f_crm_id=r.f_crm_id").
+		Where("d.f_crm_id", 232740452).
+		GetRows()
+//SELECT d.f_name,r.f_user_id FROM d_ec_crm.t_eccrm_detail as d,d_ec_crm.t_crm_relation as r WHERE d.f_crm_id=r.f_crm_id AND d.f_crm_id = "232740452"
+```
+
+##### 自定义查询列：
+
+```go
+func (query *QueryBuilder) Select(columns ...string) *QueryBuilder
+```
+
+```go
+var max, min int
+err = crm.Table("d_ec_crm.t_eccrm_detail").
+   Select("max(f_crm_id),min(f_crm_id)").
+   GetRow(&max, &min)
+```
+
+即只要满足为string，select可以支持sql的各类复杂用法
+
+##### where：
+
+```go
+//and 
+func (query *QueryBuilder) Where(column string, value ...interface{}) *QueryBuilder
+//or
+func (query *QueryBuilder) OrWhere(column string, value ...interface{}) *QueryBuilder
+
+//相等
+func (query *QueryBuilder) Equal(column string, value interface{}) *QueryBuilder
+func (query *QueryBuilder) OrEqual(column string, value interface{}) *QueryBuilder
+//不相等
+func (query *QueryBuilder) NotEqual(column string, value interface{}) *QueryBuilder
+func (query *QueryBuilder) OrNotEqual(column string, value interface{}) *QueryBuilder
+```
+
+一个参数的时候为原生where，2个参数的时候为column等,3个参数的时候第一个参数为列，第2个是操作，第3个是值
+
+```Go
+crm.Table("d_ec_crm.t_eccrm_detail").Where("f_crm_id=230740537").GetRows()
+crm.Table("d_ec_crm.t_eccrm_detail").Where("f_crm_id",230740537).GetRows()
+crm.Table("d_ec_crm.t_eccrm_detail").Where("f_crm_id","=",230740537).GetRows()
+crm.Table("d_ec_crm.t_eccrm_detail").Equal("f_crm_id",230740537).GetRows()
+```
+
+其中操作符可以是：>,<,>=,<=等
+
+其他特殊操作：
+
+```go
+//Between 
+func (query *QueryBuilder) Between(column string, value1 interface{}, value2 interface{}) *QueryBuilder
+func (query *QueryBuilder) OrBetween(column string, value1 interface{}, value2 interface{}) *QueryBuilder
+func (query *QueryBuilder) NotBetween(column string, value1 interface{}, value2 interface{}) *QueryBuilder
+func (query *QueryBuilder) NotOrBetween(column string, value1 interface{}, value2 interface{}) *QueryBuilder
+
+//in
+func (query *QueryBuilder) In(column string, value ...interface{}) *QueryBuilder
+func (query *QueryBuilder) OrIn(column string, value ...interface{}) *QueryBuilder
+func (query *QueryBuilder) NotIn(column string, value ...interface{}) *QueryBuilder
+func (query *QueryBuilder) OrNotIn(column string, value ...interface{}) *QueryBuilder
+
+//是否是空
+func (query *QueryBuilder) IsNULL(column string) *QueryBuilder
+func (query *QueryBuilder) OrIsNULL(column string) *QueryBuilder
+func (query *QueryBuilder) IsNotNULL(column string) *QueryBuilder
+func (query *QueryBuilder) OrIsNotNULL(column string) *QueryBuilder
+//like查询
+func (query *QueryBuilder) Like(column string, value interface{}) *QueryBuilder
+func (query *QueryBuilder) OrLike(column string, value interface{}) *QueryBuilder
+```
+
+```go
+var crmname string
+err = crm.Table("d_ec_crm.t_eccrm_detail").
+	Select("f_name").
+	Between("f_crm_id", 230740537, 230740560).
+	GetRow(&crmname)
+//SELECT f_name FROM d_ec_crm.t_eccrm_detail WHERE  f_crm_id BETWEEN "230740537" AND "230740560"
+
+err = crm.Table("d_ec_crm.t_eccrm_detail").Select("f_name").In("f_crm_id", 230740537, 230740560).GetRow(&crmname)
+err = crm.Table("d_ec_crm.t_eccrm_detail").Select("f_name").In("f_crm_id", []interface{}{230740537, 230740560}...).GetRow(&crmname)
+
+err = crm.Table("d_ec_crm.t_eccrm_detail").Select("f_name").Like("f_name", "李%").GetRow(&crmname)
+```
+
+##### Limit,OrderBy,GroupBy,Skip,Distinct：
+
+```go
+func (query *QueryBuilder) Distinct() *QueryBuilder
+func (query *QueryBuilder) GroupBy(groups ...string) *QueryBuilder
+//可以多次调用
+func (query *QueryBuilder) OrderBy(column string, direction string) *QueryBuilder
+func (query *QueryBuilder) Offset(offset int) *QueryBuilder
+//同Offset
+func (query *QueryBuilder) Skip(offset int) *QueryBuilder
+func (query *QueryBuilder) Limit(limit int) *QueryBuilder
+```
+
+
+
+##### Join，LeftJoin RightJoin:
+
+```go
+func (query *QueryBuilder) Join(tablename string, on string) *QueryBuilder
+func (query *QueryBuilder) LeftJoin(tablename string, on string) *QueryBuilder
+func (query *QueryBuilder) RightJoin(tablename string, on string) *QueryBuilder
+```
+
+```go
+var crmname string
+var crmid int64
+err = crm.Table("d_ec_crm.t_eccrm_detail as d").
+	Join("d_ec_crm.t_crm_relation as r", "d.f_crm_id=r.f_crm_id").
+	Select("d.f_name", "d.f_crm_id").
+	Where("d.f_corp_id", 21299).
+	Where("r.f_user_id", 0).
+	GetRow(&crmname, &crmid)
+
+//SELECT d.f_name,d.f_crm_id FROM d_ec_crm.t_eccrm_detail as d JOIN d_ec_crm.t_crm_relation as r ON d.f_crm_id=r.f_crm_id WHERE  d.f_corp_id = "21299" AND r.f_user_id = "0" LIMIT 0,1
+```
+
+##### Union,UnionAll
+
+```go
+func (query *QueryBuilder) Union(unions ...QueryBuilder) *QueryBuilder 
+func (query *QueryBuilder) UnionAll(unions ...QueryBuilder) *QueryBuilder
+```
+
 
 
 ### 插入：
