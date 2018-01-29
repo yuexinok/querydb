@@ -471,3 +471,7 @@ querydb.SetExecLog(true)
 1，使用事务的时候，一定要保证用的的db是事务的那个db。
 
 2，暂且不支持其他数据库类型。
+
+### License:
+
+This package is licensed under MIT license. See LICENSE for details.
